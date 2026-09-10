@@ -22,7 +22,6 @@ import NurseLoginPage from './pages/NurseLoginPage';
 import AIAssistantScreen from './pages/AIAssistantScreen';
 import { ensureCurrentPatientRegistered } from './services/patientRegistry';
 import { prewarmBhashiniConfig } from './services/bhashiniTTS';
-import { initNativeNotificationListeners } from './services/pwa';
 import './styles/App.css';
 
 function StartupRedirect() {
@@ -30,21 +29,26 @@ function StartupRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    initNativeNotificationListeners(navigate);
-  }, [navigate]);
-
-  useEffect(() => {
-    if (location.pathname !== '/') return;
-
-    const savedPatient = localStorage.getItem('patientData');
     const savedRole = localStorage.getItem('userRole');
+    const savedPatient = localStorage.getItem('patientData');
+    const savedFamily = localStorage.getItem('currentFamilyUser');
+    const savedNurse = localStorage.getItem('currentNurseUser');
 
-    if (savedPatient && savedRole === 'patient') {
-      navigate('/dashboard', { replace: true });
-    } else if (savedRole === 'family' && localStorage.getItem('currentFamilyUser')) {
-      navigate('/family-dashboard', { replace: true });
-    } else if (savedRole === 'nurse' && localStorage.getItem('currentNurseUser')) {
-      navigate('/nurse-dashboard', { replace: true });
+    // Handle startup / root / role-selection redirects
+    if (location.pathname === '/' || location.pathname === '/role-selection') {
+      if (savedRole === 'patient' && savedPatient) {
+        navigate('/dashboard', { replace: true });
+      } else if (!savedRole && savedPatient && !savedFamily && !savedNurse) {
+        localStorage.setItem('userRole', 'patient');
+        navigate('/dashboard', { replace: true });
+      } else if (savedRole === 'family' && savedFamily) {
+        navigate('/family-dashboard', { replace: true });
+      } else if (savedRole === 'nurse' && savedNurse) {
+        navigate('/nurse-dashboard', { replace: true });
+      } else if (location.pathname === '/') {
+        // If on root '/' and not logged into any role, route directly to /role-selection
+        navigate('/role-selection', { replace: true });
+      }
     }
   }, [location.pathname, navigate]);
 
@@ -52,8 +56,15 @@ function StartupRedirect() {
 }
 
 function App() {
-  const [patient, setPatient] = useState(null);
-  const [, setRole] = useState(null);
+  const [patient, setPatient] = useState(() => {
+    try {
+      const saved = localStorage.getItem('patientData');
+      return saved ? ensureCurrentPatientRegistered() : null;
+    } catch {
+      return null;
+    }
+  });
+  const [, setRole] = useState(() => localStorage.getItem('userRole') || null);
   const [, setTranslationVersion] = useState(0);
 
   useEffect(() => {
@@ -63,15 +74,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Load patient data from localStorage
-    const savedPatient = localStorage.getItem('patientData');
-    const savedRole = localStorage.getItem('userRole');
-    if (savedPatient) {
-      setPatient(ensureCurrentPatientRegistered());
-    }
-    if (savedRole) {
-      setRole(savedRole);
-    }
     // Pre-warm Bhashini pipeline config for faster TTS
     prewarmBhashiniConfig();
   }, []);

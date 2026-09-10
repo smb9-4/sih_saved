@@ -25,7 +25,13 @@ const RELATIONS = [
 
 function FamilyLoginPage() {
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('familyAccounts') || '[]').length === 0;
+    } catch {
+      return true;
+    }
+  });
 
   // Form states
   const [name, setName] = useState('');

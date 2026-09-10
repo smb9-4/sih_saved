@@ -1,16 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, User, Stethoscope } from 'lucide-react';
+import { Users, User, Stethoscope, UserPlus } from 'lucide-react';
 import '../styles/RoleSelectionPage.css';
 
 function RoleSelectionPage({ setRole }) {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(null);
 
+  // If already logged in, redirect directly to active dashboard
+  useEffect(() => {
+    const savedRole = localStorage.getItem('userRole');
+    const savedPatient = localStorage.getItem('patientData');
+    const savedFamily = localStorage.getItem('currentFamilyUser');
+    const savedNurse = localStorage.getItem('currentNurseUser');
+
+    if (savedRole === 'patient' && savedPatient) {
+      navigate('/dashboard', { replace: true });
+    } else if (savedRole === 'family' && savedFamily) {
+      navigate('/family-dashboard', { replace: true });
+    } else if (savedRole === 'nurse' && savedNurse) {
+      navigate('/nurse-dashboard', { replace: true });
+    }
+  }, [navigate]);
+
+  const savedPatientObj = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('patientData'));
+    } catch {
+      return null;
+    }
+  })();
+
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
     localStorage.setItem('userRole', role);
-    setRole(role);
+    if (setRole) setRole(role);
     
     setTimeout(() => {
       if (role === 'patient') {
@@ -37,7 +61,15 @@ function RoleSelectionPage({ setRole }) {
           navigate('/nurse-login');
         }
       }
-    }, 300);
+    }, 200);
+  };
+
+  const handleNewPatientSignup = (e) => {
+    e.stopPropagation();
+    localStorage.removeItem('patientData');
+    localStorage.setItem('userRole', 'patient');
+    if (setRole) setRole('patient');
+    navigate('/patient-setup');
   };
 
   return (
@@ -55,7 +87,21 @@ function RoleSelectionPage({ setRole }) {
               <User size={60} />
             </div>
             <h2 className="role-label">Patient</h2>
-            <p className="role-description">I am looking for healthcare assistance</p>
+            <p className="role-description">
+              {savedPatientObj && savedPatientObj.name
+                ? `Continue as ${savedPatientObj.name}`
+                : 'I am looking for healthcare assistance'}
+            </p>
+            {savedPatientObj && (
+              <button
+                type="button"
+                className="role-sub-action-btn"
+                onClick={handleNewPatientSignup}
+                title="Register a new patient profile"
+              >
+                <UserPlus size={14} /> New Patient Sign Up
+              </button>
+            )}
           </div>
 
           <div 

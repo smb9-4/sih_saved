@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Activity, Clock, TrendingUp, RefreshCw, Users, LogOut } from 'lucide-react';
 import '../styles/ViewerInsights.css';
-import TopBackButton from './TopBackButton';
 import viewerApi, {
   getSelectedPatientId,
   selectPatient,
@@ -156,9 +155,6 @@ function ViewerInsights({ role }) {
 
   return (
     <div className="viewer-page">
-      <div className="top-back-row">
-        <TopBackButton to="/role-selection" />
-      </div>
       <div className="viewer-header">
         <div>
           <h1 className="viewer-title">{roleLabel} Dashboard</h1>

@@ -26,6 +26,68 @@
   padding: var(--spacing-lg);
 }
 
+.patient-dash-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.patient-dash-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #2E7D32;
+  background: rgba(46, 125, 50, 0.08);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.patient-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2E7D32;
+  box-shadow: 0 0 6px rgba(46, 125, 50, 0.6);
+}
+
+.patient-badge-text {
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.patient-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #ffffff;
+  color: #D32F2F;
+  border: 1px solid rgba(211, 47, 47, 0.25);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.patient-logout-btn:hover {
+  background: #FFEBEE;
+  border-color: #D32F2F;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(211, 47, 47, 0.15);
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;

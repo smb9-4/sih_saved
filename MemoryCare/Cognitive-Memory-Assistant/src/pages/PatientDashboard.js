@@ -1,16 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { t, getAppLanguage } from '../i18n';
 import '../styles/PatientDashboard.css';
 import Navigation from '../components/Navigation';
 import OfflineLangAlert from '../components/OfflineLangAlert';
-import TopBackButton from '../components/TopBackButton';
+import { ensureCurrentPatientRegistered } from '../services/patientRegistry';
 
-function PatientDashboard({ patient }) {
+function PatientDashboard({ patient, setPatient }) {
   const navigate = useNavigate();
-  const lang = patient?.language || getAppLanguage();
+  const activePatient = patient || ensureCurrentPatientRegistered();
+  const lang = activePatient?.language || getAppLanguage();
 
-  if (!patient) {
+  if (!activePatient) {
     return (
       <div className="dashboard-container">
         <div className="dashboard-content">
@@ -20,6 +22,14 @@ function PatientDashboard({ patient }) {
       </div>
     );
   }
+
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('viewerRole');
+    localStorage.removeItem('viewerToken');
+    localStorage.removeItem('viewerPatientId');
+    navigate('/role-selection');
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -42,22 +52,31 @@ function PatientDashboard({ patient }) {
       <div className="dashboard-container">
         <div className="dashboard-content">
           <OfflineLangAlert lang={lang} />
-          <div className="top-back-row">
-            <TopBackButton to="/role-selection" />
+          
+          <div className="patient-dash-topbar">
+            <div className="patient-dash-badge">
+              <span className="patient-badge-dot"></span>
+              <span className="patient-badge-text">Patient</span>
+            </div>
+            <button className="patient-logout-btn" onClick={handleLogout} title="Log out and return to role selection">
+              <LogOut size={16} />
+              <span>Log Out</span>
+            </button>
           </div>
+
           <div className="dashboard-header">
             <div className="greeting-section">
               <h1 className="greeting">
-                {getGreeting()}, <span className="patient-name">{patient.name}</span>
+                {getGreeting()}, <span className="patient-name">{activePatient.name}</span>
               </h1>
               <p className="time">
                 {new Date().toLocaleDateString(lang === 'en' ? 'en-US' : undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
-              {patient.patient_id && (
+              {activePatient.patient_id && (
                 <div className="patient-id">
                   <span className="patient-id-badge">
                     <span className="patient-id-label">{t(lang, 'patientId')}:</span>{' '}
-                    <span className="patient-id-value">{patient.patient_id}</span>
+                    <span className="patient-id-value">{activePatient.patient_id}</span>
                   </span>
                 </div>
               )}

@@ -11,7 +11,13 @@ import { languageLabel } from '../i18n';
 
 function NurseLoginPage() {
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('nurseAccounts') || '[]').length === 0;
+    } catch {
+      return true;
+    }
+  });
 
   // Sign Up form states
   const [name, setName] = useState('');

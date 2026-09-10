@@ -116,3 +116,26 @@
     grid-template-columns: 1fr;
   }
 }
+
+.role-sub-action-btn {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(216, 90, 48, 0.08);
+  color: var(--primary-color, #D85A30);
+  border: 1px dashed var(--primary-color, #D85A30);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.role-sub-action-btn:hover {
+  background: var(--primary-color, #D85A30);
+  color: #ffffff;
+  border-style: solid;
+}
+

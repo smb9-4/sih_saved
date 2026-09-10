@@ -68,7 +68,7 @@ function LinkPatientPage() {
   };
 
   const handleBack = () => {
-    navigate('/role-selection');
+    navigate('/family-dashboard');
   };
 
   return (

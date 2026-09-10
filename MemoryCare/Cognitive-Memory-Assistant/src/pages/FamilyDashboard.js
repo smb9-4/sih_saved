@@ -5,7 +5,6 @@ import {
   Image as ImageIcon, Bell, Link2, Loader, LogOut,
 } from 'lucide-react';
 import '../styles/FamilyDashboard.css';
-import TopBackButton from '../components/TopBackButton';
 import viewerApi, {
   getSelectedPatientId,
   selectPatient,
@@ -166,18 +165,31 @@ function FamilyDashboard() {
     loadAll();
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('currentFamilyUser');
+    localStorage.removeItem('viewerRole');
+    localStorage.removeItem('viewerToken');
+    localStorage.removeItem('viewerPatientId');
+    navigate('/role-selection');
+  };
+
   const goToLink = () => navigate('/family/link-patient');
   const goToFamilyMembers = () => navigate('/family/family-members');
 
   if (!selectedId && !loading) {
     return (
       <div className="family-page">
-        <div className="top-back-row">
-          <TopBackButton to="/role-selection" />
-        </div>
         <div className="family-dash-header">
-          <h1 className="family-dash-title">Family Dashboard</h1>
-          <p className="family-dash-subtitle">Stay connected with your loved one's cognitive journey</p>
+          <div>
+            <h1 className="family-dash-title">Family Dashboard</h1>
+            <p className="family-dash-subtitle">Stay connected with your loved one's cognitive journey</p>
+          </div>
+          <div className="family-header-actions">
+            <button className="family-header-btn secondary" onClick={handleLogout} title="Log Out">
+              <LogOut size={16} /> Log Out
+            </button>
+          </div>
         </div>
         <div className="family-empty-state">
           <Users size={40} />
@@ -205,9 +217,6 @@ function FamilyDashboard() {
 
   return (
     <div className="family-page">
-      <div className="top-back-row">
-        <TopBackButton to="/role-selection" />
-      </div>
       <div className="family-dash-header">
         <div>
           <h1 className="family-dash-title">Family Dashboard</h1>
@@ -221,8 +230,8 @@ function FamilyDashboard() {
           )}
         </div>
         <div className="family-header-actions">
-          <button className="family-header-btn secondary" onClick={() => navigate('/family-login')} title="Switch Account or Login">
-            <LogOut size={16} /> Switch Account
+          <button className="family-header-btn secondary" onClick={handleLogout} title="Log Out">
+            <LogOut size={16} /> Log Out
           </button>
           <button className="family-header-btn" onClick={goToLink}>
             <Link2 size={16} /> Connect
