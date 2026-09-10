@@ -2,13 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import '../styles/PatientSetupPage.css';
-import { STRINGS as SETUP_STRINGS } from '../i18nReact';
-import { getAppLanguage } from '../i18n';
+import { getAppLanguage, t } from '../i18n';
 import { speak, setVoiceLang, stopSpeaking } from '../services/voice';
 import { registerPatient } from '../services/patientRegistry';
 
 const LANGUAGE_OPTIONS = [
-  { code: 'brx', label: 'Bodo' },
   { code: 'en', label: 'English' },
   { code: 'hi', label: 'Hindi' },
   { code: 'as', label: 'Assamese' },
@@ -48,8 +46,7 @@ const INDIAN_STATES = [
 ];
 
 function setupT(lang, key) {
-  const pack = SETUP_STRINGS[lang] || SETUP_STRINGS.en;
-  return pack[key] || SETUP_STRINGS.en[key] || key;
+  return t(lang, key);
 }
 
 function PatientSetupPage({ setPatient }) {
@@ -125,6 +122,7 @@ function PatientSetupPage({ setPatient }) {
         gameScore: 0
       };
       localStorage.setItem('preferredLang', lang);
+      localStorage.setItem('userRole', 'patient');
       const registered = registerPatient(patientData);
       localStorage.setItem('patientData', JSON.stringify(registered));
       setPatient(registered);

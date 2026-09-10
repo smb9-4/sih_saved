@@ -133,9 +133,11 @@ function ProfileScreen({ patient, setPatient }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('patientData');
     localStorage.removeItem('userRole');
-    navigate('/');
+    localStorage.removeItem('viewerRole');
+    localStorage.removeItem('viewerToken');
+    localStorage.removeItem('viewerPatientId');
+    navigate('/role-selection');
   };
 
   const handleSaveApiKeys = () => {
@@ -246,9 +248,9 @@ function ProfileScreen({ patient, setPatient }) {
               </div>
 
               <div className="profile-api-keys">
-                <h3 className="profile-language-title">🔑 API Keys (Bhashini)</h3>
+                <h3 className="profile-language-title">🔑 {t(currentLang, 'apiKeysTitle')}</h3>
                 <div className="form-group">
-                  <label htmlFor="bhashini-update-key">Bhashini Update / ULCA Key</label>
+                  <label htmlFor="bhashini-update-key">{t(currentLang, 'bhashiniUpdateKey')}</label>
                   <input
                     id="bhashini-update-key"
                     type="password"
@@ -259,7 +261,7 @@ function ProfileScreen({ patient, setPatient }) {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="bhashini-inference-key">Bhashini Inference Key</label>
+                  <label htmlFor="bhashini-inference-key">{t(currentLang, 'bhashiniInferenceKey')}</label>
                   <input
                     id="bhashini-inference-key"
                     type="password"
@@ -275,15 +277,14 @@ function ProfileScreen({ patient, setPatient }) {
                     className="save-btn"
                     onClick={handleSaveApiKeys}
                   >
-                    {apiKeySaved ? '✓ Saved' : 'Save API Keys'}
+                    {apiKeySaved ? `✓ ${t(currentLang, 'saved')}` : t(currentLang, 'saveApiKeys')}
                   </button>
                   {apiKeySaved && (
-                    <span className="api-keys-saved-msg">API keys saved</span>
+                    <span className="api-keys-saved-msg">{t(currentLang, 'apiKeysSaved')}</span>
                   )}
                 </div>
                 <p className="api-keys-hint">
-                  Leave blank to use the built-in keys. Omit the update key to disable
-                  custom config.
+                  {t(currentLang, 'apiKeysHint')}
                 </p>
               </div>
 

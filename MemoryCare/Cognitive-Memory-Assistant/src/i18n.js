@@ -1,12 +1,11 @@
 import { STRINGS as LEGACY_STRINGS } from './i18nLegacy';
 import { STRINGS as REACT_STRINGS } from './i18nReact';
 
-export const LANGUAGES = ['brx', 'en', 'hi', 'as', 'bn', 'mni'];
+export const LANGUAGES = ['en', 'hi', 'as', 'bn', 'mni'];
 
 export const SUPPORTED_LANGUAGES = LANGUAGES;
 
 export const LANGUAGE_DISPLAY_ORDER = [
-  'brx',
   'en',
   'hi',
   'as',
@@ -15,7 +14,6 @@ export const LANGUAGE_DISPLAY_ORDER = [
 ];
 
 export const LANGUAGE_LABELS = {
-  brx: 'बड़ो',
   en: 'English',
   hi: 'हिन्दी',
   as: 'অসমীয়া',
@@ -77,6 +75,13 @@ const EXTRA = {
     lastUpdated: 'Last updated: {date}',
     setupProfile: 'Setup Profile',
     selectYourState: 'Select your state',
+    apiKeysTitle: 'API Keys (Bhashini)',
+    bhashiniUpdateKey: 'Bhashini Update / ULCA Key',
+    bhashiniInferenceKey: 'Bhashini Inference Key',
+    saveApiKeys: 'Save API Keys',
+    saved: 'Saved',
+    apiKeysSaved: 'API keys saved',
+    apiKeysHint: 'Leave blank to use the built-in keys. Omit the update key to disable custom config.',
   },
   hi: {
     navHome: 'होम',

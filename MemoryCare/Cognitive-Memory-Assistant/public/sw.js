@@ -52,12 +52,21 @@ self.addEventListener('reminder-schedule', (event) => {
 function scheduleNotification(reminder) {
   const now = Date.now();
   const [hours, minutes] = reminder.time.split(':').map(Number);
-  const target = new Date();
-  target.setHours(hours, minutes, 0, 0);
-
-  if (target.getTime() <= now) {
-    target.setDate(target.getDate() + 1);
+  const days = Array.isArray(reminder.days) && reminder.days.length
+    ? reminder.days
+    : [0, 1, 2, 3, 4, 5, 6];
+  let target = null;
+  for (let offset = 0; offset <= 7; offset += 1) {
+    const candidate = new Date();
+    candidate.setDate(candidate.getDate() + offset);
+    candidate.setHours(hours, minutes, 0, 0);
+    if (days.includes(candidate.getDay()) && candidate.getTime() > now) {
+      target = candidate;
+      break;
+    }
   }
+
+  if (!target) return;
 
   const delay = target.getTime() - now;
 
@@ -80,6 +89,7 @@ function scheduleNotification(reminder) {
       data: { reminderId: reminder.id },
     });
     delete self._activeTimers[timerId];
+    scheduleNotification(reminder);
   }, delay);
 }
 

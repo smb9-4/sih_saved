@@ -3,7 +3,7 @@
  * ---------------------
  * Integrates with the Bhashini (ULCA/Dhruva) API to provide high-quality
  * Text-to-Speech for Indian languages: Hindi, Bengali, Assamese,
- * Manipuri (Meitei), Bodo, and other Northeast languages.
+ * Manipuri (Meitei) and other supported Indian languages.
  *
  * Flow:
  *  1. Fetch pipeline config → get serviceId per language (cached)
@@ -52,18 +52,16 @@ const BHASHINI_LANGS = {
   bn: "bn",    // Bengali
   as: "as",    // Assamese
   mni: "mni",  // Manipuri (Meitei)
-  brx: "brx",  // Bodo
 };
 
-// Female Indic TTS models. Indo-Aryan (hi/bn/as) and misc (mni/brx)
+// Female Indic TTS models. Indo-Aryan (hi/bn/as) and misc (mni)
 // must not share a serviceId — the wrong family often returns a male
-// or off-language voice. IITM covers Assamese/Bodo/Manipuri as backup.
+// or off-language voice.
 const TTS_SERVICE_IDS = {
   hi: "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4",
   bn: "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4",
   as: "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4",
   mni: "ai4bharat/indic-tts-coqui-misc-gpu--t4",
-  brx: "ai4bharat/indic-tts-coqui-misc-gpu--t4",
 };
 
 const TTS_SCRIPT_CODES = {
@@ -71,7 +69,6 @@ const TTS_SCRIPT_CODES = {
   bn: "Beng",
   as: "Beng",
   mni: "Beng",
-  brx: "Deva",
 };
 
 const IITM_TTS_SERVICE = "Bhashini/IITM/TTS";

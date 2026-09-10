@@ -12,7 +12,6 @@ const RECOGNITION_LANG = {
   as: 'as-IN',
   bn: 'bn-IN',
   mni: 'mni-IN',
-  brx: 'brx-IN',
 };
 
 const UI = {

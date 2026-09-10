@@ -32,7 +32,7 @@ function PatientDashboard({ patient }) {
     { id: 'game', icon: '🎮', label: t(lang, 'navGames'), path: '/games', description: t(lang, 'featureGamesDesc') },
     { id: 'reminders', icon: '⏰', label: t(lang, 'navReminders'), path: '/reminders', description: t(lang, 'featureRemindersDesc') },
     { id: 'breathing', icon: '🌬️', label: t(lang, 'breathingName'), path: '/breathing', description: t(lang, 'featureBreathingDesc') },
-    
+    { id: 'ai-assistant', icon: '❤️', label: 'AI Assistant', path: '/ai-assistant', description: 'Your gentle companion for a warm conversation' },
     { id: 'emergency', icon: '🚨', label: t(lang, 'navSos'), path: '/emergency', description: t(lang, 'featureEmergencyDesc') },
     { id: 'profile', icon: '👤', label: t(lang, 'navProfile'), path: '/profile', description: t(lang, 'featureProfileDesc') },
   ];
@@ -68,7 +68,7 @@ function PatientDashboard({ patient }) {
             {features.map(feature => (
               <button
                 key={feature.id}
-                className="feature-card"
+                className={`feature-card${feature.id === 'ai-assistant' ? ' feature-card--ai' : ''}`}
                 onClick={() => navigate(feature.path)}
               >
                 <div className="feature-icon-large">{feature.icon}</div>

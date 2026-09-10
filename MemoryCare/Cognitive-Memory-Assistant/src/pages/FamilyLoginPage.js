@@ -136,9 +136,12 @@ function FamilyLoginPage() {
       await viewerApi.ensureSession('family', true);
       await viewerApi.linkPatient(trimmedPatientId);
 
-      setSuccess(`Welcome, ${trimmedName}! Your 4-digit code is confirmed. Redirecting to Family Dashboard...`);
+      setSuccess(`Account created for ${trimmedName}. Please sign in with your 4-digit code.`);
       setTimeout(() => {
-        navigate('/family-dashboard');
+        setIsSignUp(false);
+        setLoginIdentifier(trimmedPhone);
+        setLoginPin('');
+        setSuccess('');
       }, 1200);
     } catch (err) {
       setError(err.message || 'Error completing registration. Please try again.');

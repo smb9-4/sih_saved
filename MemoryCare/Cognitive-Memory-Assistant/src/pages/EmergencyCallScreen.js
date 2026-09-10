@@ -20,7 +20,6 @@ const EMERGENCY_SERVICES = [
       bn: 'জাতীয় জরুরি সেবা (112)',
       as: 'ৰাষ্ট্ৰীয় জৰুৰীকালীন (112)',
       mni: 'লৈবাক্কী অখন্ন মতেং (112)',
-      brx: 'हादरनि गोनांथार मदद (112)',
       en: 'National Emergency (112)',
     },
     number: '112',
@@ -37,7 +36,6 @@ const EMERGENCY_SERVICES = [
       bn: 'অ্যাম্বুলেন্স / চিকিৎসা জরুরি (108)',
       as: 'এম্বুলেন্স / চিকিৎসা জৰুৰীকালীন (108)',
       mni: 'এম্বুলেন্স / অনাবাগী মতেং (108)',
-      brx: 'एम्बुलेन्स / देहा फाहामथाय (108)',
       en: 'Ambulance Emergency (108)',
     },
     number: '108',
@@ -54,7 +52,6 @@ const EMERGENCY_SERVICES = [
       bn: 'পুলিশ সহায়তা (100)',
       as: 'আৰক্ষী সাহাৰ্য্য (100)',
       mni: 'পুলিসকী মতেং (100)',
-      brx: 'पुलिश मदद (100)',
       en: 'Police Helpline (100)',
     },
     number: '100',
@@ -71,7 +68,6 @@ const EMERGENCY_SERVICES = [
       bn: 'প্রবীণ নাগরিক ও স্মৃতিসেবা হেল্পলাইন (14567)',
       as: 'জ্যেষ্ঠ নাগৰিক আৰু স্মৃতিসেৱা হেল্পলাইন (14567)',
       mni: 'অহনগী মীওই অমসুং নিংশিং লমজিং হেল্পলাইন (14567)',
-      brx: 'गोजौ बैसोनि सुबुं आरो गोसोखां हेफाफाब (14567)',
       en: 'Elderline & Dementia Helpline (14567)',
     },
     number: '14567',
@@ -87,7 +83,6 @@ const LOCALIZED_TITLES = {
   bn: { title: 'জরুরি সহায়তা', subtitle: 'প্রয়োজনের সময় তাত্ক্ষণিক সাহায্য' },
   as: { title: 'জৰুৰীকালীন সাহাৰ্য্য', subtitle: 'প্ৰয়োজনৰ সময়ত তাৎক্ষণিক সাহায্য' },
   mni: { title: 'অখন্ন মতেং', subtitle: 'মরুওইবা মতমদা য়াংনা মতেং ফংনবা' },
-  brx: { title: 'गोनांथार हेफाफाब', subtitle: 'नांगौ सम आव गोख्रै मदद' },
   en: { title: 'Emergency Assistance', subtitle: 'Quick 1-touch access to help when you need it' },
 };
 
@@ -254,7 +249,6 @@ function EmergencyCallScreen({ patient: propPatient }) {
       phrase = `জৰুৰীকালীন জাননী! ৰোগী ${name}, বয়স ${age} বছৰ, ৰাজ্য ${state}। জৰুৰীকালীন যোগাযোগ ${contact}, ফোন ${phone}। তৎকালীন চিকিৎসা সাহাৰ্য্যৰ প্ৰয়োজন।`;
     } else if (lang === 'mni') {
       phrase = `অখন্ন পাও! অনাবা ${name}, চহি ${age}, লৈফম ${state}। অখন্ন মীওই ${contact}, ফোন ${phone}। য়াংনা লায়েংগী মতেং মথৌ তারি।`;
-    } else if (lang === 'brx') {
       phrase = `गोनांथार खौरां! बेरामी ${name}, बैसो ${age}, हादर ${state}। मददगिरि ${contact}, फोन ${phone}। थाबैनो देहा फाहामथाय नांगौ।`;
     }
 

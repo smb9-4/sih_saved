@@ -142,6 +142,45 @@
   animation: slideUp 0.3s ease-out;
 }
 
+.reminder-field-label,
+.days-fieldset legend {
+  color: var(--text-dark);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.days-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.weekday-picker {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.weekday-chip {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--text-dark);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.weekday-chip.selected {
+  border-color: #D85A30;
+  background: #D85A30;
+  color: var(--white);
+}
+
 .form-input,
 .form-textarea {
   padding: var(--spacing-md) var(--spacing-lg);
@@ -262,6 +301,23 @@
   font-weight: 600;
   color: var(--text-dark);
   margin-bottom: var(--spacing-xs);
+}
+
+.reminder-type,
+.reminder-days {
+  display: block;
+  color: var(--text-light);
+  font-size: var(--font-size-sm);
+}
+
+.reminder-type {
+  color: #D85A30;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.reminder-days {
+  margin-top: 4px;
 }
 
 .reminder-description {

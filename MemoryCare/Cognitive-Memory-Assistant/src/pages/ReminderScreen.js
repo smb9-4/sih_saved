@@ -11,9 +11,11 @@ function ReminderScreen({ patient }) {
   const [notificationPopup, setNotificationPopup] = useState(null);
   const [notifiedReminders, setNotifiedReminders] = useState(new Set());
   const [formData, setFormData] = useState({
+    type: 'medicine',
     name: '',
     time: '',
-    description: ''
+    description: '',
+    days: [1, 2, 3, 4, 5, 6, 0]
   });
   const [isOnline, setIsOnline] = useState(getOnlineStatus());
 
@@ -94,18 +96,25 @@ function ReminderScreen({ patient }) {
       return;
     }
 
+    if (!formData.days.length) {
+      alert('Please choose at least one day');
+      return;
+    }
+
     const newReminder = {
       id: Date.now(),
+      type: formData.type,
       name: formData.name,
       time: formData.time,
       description: formData.description,
+      days: formData.days,
       completed: false,
       createdAt: new Date().toISOString()
     };
 
     const updatedReminders = [...reminders, newReminder];
     saveReminders(updatedReminders);
-    setFormData({ name: '', time: '', description: '' });
+    setFormData({ type: 'medicine', name: '', time: '', description: '', days: [1, 2, 3, 4, 5, 6, 0] });
     setShowForm(false);
   };
 
@@ -166,6 +175,18 @@ function ReminderScreen({ patient }) {
 
           {showForm && (
             <form className="reminder-form" onSubmit={handleAddReminder}>
+              <label className="reminder-field-label" htmlFor="reminder-type">What is this reminder for?</label>
+              <select
+                id="reminder-type"
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="form-input"
+              >
+                <option value="water">Drinking water</option>
+                <option value="medicine">Medicine</option>
+                <option value="going">Going somewhere</option>
+                <option value="other">Other</option>
+              </select>
               <input
                 type="text"
                 placeholder="Reminder name (e.g., Take Medicine)"
@@ -179,6 +200,28 @@ function ReminderScreen({ patient }) {
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 className="form-input"
               />
+              <fieldset className="days-fieldset">
+                <legend>Repeat on</legend>
+                <div className="weekday-picker">
+                  {[['M', 1, 'Monday'], ['T', 2, 'Tuesday'], ['W', 3, 'Wednesday'], ['T', 4, 'Thursday'], ['F', 5, 'Friday'], ['S', 6, 'Saturday'], ['S', 0, 'Sunday']].map(([label, value, name]) => (
+                    <button
+                      type="button"
+                      key={name}
+                      className={`weekday-chip ${formData.days.includes(value) ? 'selected' : ''}`}
+                      aria-label={name}
+                      aria-pressed={formData.days.includes(value)}
+                      onClick={() => setFormData({
+                        ...formData,
+                        days: formData.days.includes(value)
+                          ? formData.days.filter((day) => day !== value)
+                          : [...formData.days, value]
+                      })}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               <textarea
                 placeholder="Description (optional)"
                 value={formData.description}
@@ -204,7 +247,9 @@ function ReminderScreen({ patient }) {
                   <div className="reminder-info">
                     <div className="reminder-time">{reminder.time}</div>
                     <div className="reminder-details">
+                      <span className="reminder-type">{reminder.type === 'water' ? 'Water' : reminder.type === 'going' ? 'Going somewhere' : reminder.type === 'medicine' ? 'Medicine' : 'Other'}</span>
                       <h3 className="reminder-name">{reminder.name}</h3>
+                      <p className="reminder-days">{(reminder.days || [1, 2, 3, 4, 5, 6, 0]).map((day) => ['S', 'M', 'T', 'W', 'T', 'F', 'S'][day]).join(' · ')}</p>
                       {reminder.description && (
                         <p className="reminder-description">{reminder.description}</p>
                       )}

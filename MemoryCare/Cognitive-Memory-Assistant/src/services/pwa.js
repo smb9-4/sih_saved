@@ -154,39 +154,45 @@ async function getRegistration() {
   }
 }
 
-function nextOccurrenceTime(time) {
+function nextOccurrenceTime(time, days = [0, 1, 2, 3, 4, 5, 6]) {
   const [hours, minutes] = String(time || '').split(':').map(Number);
   if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
   const now = new Date();
-  const target = new Date(now);
-  target.setHours(hours, minutes, 0, 0);
-  if (target.getTime() <= now.getTime()) {
-    target.setDate(target.getDate() + 1);
+  const selectedDays = Array.isArray(days) && days.length ? days : [0, 1, 2, 3, 4, 5, 6];
+  for (let offset = 0; offset <= 7; offset += 1) {
+    const target = new Date(now);
+    target.setDate(now.getDate() + offset);
+    target.setHours(hours, minutes, 0, 0);
+    if (selectedDays.includes(target.getDay()) && target.getTime() > now.getTime()) {
+      return target;
+    }
   }
-  return target;
+  return null;
 }
 
 export async function scheduleNativeReminder(reminder) {
   if (!isNative() || !reminder) return;
-  const at = nextOccurrenceTime(reminder.time);
-  if (!at) return;
+  const days = Array.isArray(reminder.days) && reminder.days.length
+    ? reminder.days
+    : [0, 1, 2, 3, 4, 5, 6];
   const title = reminder.name || 'MemoryCare Reminder';
   const body = reminder.description
     ? `${reminder.time} - ${reminder.description}`
     : `Reminder at ${reminder.time}`;
   try {
     await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: Number(String(reminder.id).slice(-8)) || Date.now() % 2147483647,
+      notifications: days.map((day) => {
+        const at = nextOccurrenceTime(reminder.time, [day]);
+        return {
+          id: Number(`${String(reminder.id).slice(-7)}${day}`) || Date.now() % 2147483647,
           title,
           body,
-          schedule: { at },
+          schedule: { at, every: 'week' },
           sound: 'notification.mp3',
           smallIcon: 'ic_stat_memorycare',
           iconColor: '#2E7D32',
-        },
-      ],
+        };
+      }),
     });
   } catch (e) {}
 }
@@ -209,9 +215,10 @@ export async function syncRemindersToNative(reminders) {
 
 export async function cancelNativeReminder(reminderId) {
   if (!isNative()) return;
-  const id = Number(String(reminderId).slice(-8)) || Date.now() % 2147483647;
   try {
-    await LocalNotifications.cancel({ notifications: [{ id }] });
+    await LocalNotifications.cancel({ notifications: Array.from({ length: 7 }, (_, day) => ({
+      id: Number(`${String(reminderId).slice(-7)}${day}`),
+    })) });
   } catch (e) {}
 }
 

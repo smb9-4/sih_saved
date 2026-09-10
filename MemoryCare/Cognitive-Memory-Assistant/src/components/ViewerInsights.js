@@ -66,6 +66,16 @@ function ViewerInsights({ role }) {
 
   const roleLabel = role === 'nurse' ? 'Nurse' : 'Family';
 
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('viewerRole');
+    localStorage.removeItem('viewerToken');
+    localStorage.removeItem('viewerPatientId');
+    if (role === 'family') localStorage.removeItem('currentFamilyUser');
+    if (role === 'nurse') localStorage.removeItem('currentNurseUser');
+    navigate('/role-selection');
+  };
+
   const ensureViewerSession = useCallback(async (force = false) => {
     await viewerApi.ensureSession(role, force);
   }, [role]);
@@ -165,6 +175,9 @@ function ViewerInsights({ role }) {
               <LogOut size={16} /> Switch Account
             </button>
           )}
+          <button className="viewer-switch-btn" onClick={handleLogout} title="Log out">
+            <LogOut size={16} /> Log out
+          </button>
           <button className="viewer-refresh" onClick={handleRetry} disabled={loadingPatients || loadingOverview}>
             <RefreshCw size={16} /> Refresh
           </button>

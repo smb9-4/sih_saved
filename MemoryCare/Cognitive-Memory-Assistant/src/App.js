@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import WelcomePage from './pages/WelcomePage';
 import RoleSelectionPage from './pages/RoleSelectionPage';
 import PatientSetupPage from './pages/PatientSetupPage';
@@ -19,13 +19,43 @@ import LinkPatientPage from './pages/LinkPatientPage';
 import FamilyMemberPage from './pages/FamilyMemberPage';
 import FamilyLoginPage from './pages/FamilyLoginPage';
 import NurseLoginPage from './pages/NurseLoginPage';
+import AIAssistantScreen from './pages/AIAssistantScreen';
 import { ensureCurrentPatientRegistered } from './services/patientRegistry';
 import { prewarmBhashiniConfig } from './services/bhashiniTTS';
 import './styles/App.css';
 
+function StartupRedirect() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+
+    const savedPatient = localStorage.getItem('patientData');
+    const savedRole = localStorage.getItem('userRole');
+
+    if (savedPatient && savedRole === 'patient') {
+      navigate('/dashboard', { replace: true });
+    } else if (savedRole === 'family' && localStorage.getItem('currentFamilyUser')) {
+      navigate('/family-dashboard', { replace: true });
+    } else if (savedRole === 'nurse' && localStorage.getItem('currentNurseUser')) {
+      navigate('/nurse-dashboard', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  return null;
+}
+
 function App() {
   const [patient, setPatient] = useState(null);
   const [, setRole] = useState(null);
+  const [, setTranslationVersion] = useState(0);
+
+  useEffect(() => {
+    const refreshTranslations = () => setTranslationVersion((version) => version + 1);
+    window.addEventListener('memorycare-translations-ready', refreshTranslations);
+    return () => window.removeEventListener('memorycare-translations-ready', refreshTranslations);
+  }, []);
 
   useEffect(() => {
     // Load patient data from localStorage
@@ -44,6 +74,7 @@ function App() {
   return (
     <Router>
       <div className="app">
+        <StartupRedirect />
         <Routes>
           <Route path="/" element={<WelcomePage />} />
           <Route path="/role-selection" element={<RoleSelectionPage setRole={setRole} />} />
@@ -63,6 +94,7 @@ function App() {
           <Route path="/nurse-dashboard" element={<NurseDashboard />} />
           <Route path="/family/link-patient" element={<LinkPatientPage />} />
           <Route path="/family/family-members" element={<FamilyMemberPage />} />
+          <Route path="/ai-assistant" element={<AIAssistantScreen />} />
         </Routes>
       </div>
     </Router>
