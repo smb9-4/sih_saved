@@ -202,14 +202,14 @@ function FaceNameGame({ lang, level, onHome }) {
                 type="button"
                 onClick={() => handleChoice(person)}
               >
-                <img className="face-option-photo" src={person.photoDataUrl} alt={person.name} />
+                <span className="face-name-label">{person.name}</span>
               </button>
             ))}
           </div>
         ) : (
           <>
             <div className="face-stage">
-              <img className="face-stage-photo" src={round.target.photoDataUrl} alt={round.target.name} />
+              <span className="face-stage-name">{round.target.name}</span>
             </div>
             <div className="choice-col">
               {round.choices.map((person) => (

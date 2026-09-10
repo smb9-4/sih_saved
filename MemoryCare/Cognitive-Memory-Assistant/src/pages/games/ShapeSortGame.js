@@ -8,7 +8,7 @@ import { GameHeader, GameSummaryView, ShapeMark } from './GameParts';
 
 function tileContent(item) {
   if (item.kind === 'emoji') return <span className="sort-emoji">{item.emoji}</span>;
-  if (item.kind === 'object') return <img className="sort-photo" src={item.image} alt={item.label || ''} />;
+  if (item.kind === 'object') return <span className="card-word">{item.label || item.name || ''}</span>;
   return <ShapeMark shape={item.shape} fill="#D85A30" size={52} />;
 }
 

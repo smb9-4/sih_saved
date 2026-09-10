@@ -5,6 +5,7 @@ import { t, getAppLanguage } from '../i18n';
 import '../styles/PatientDashboard.css';
 import Navigation from '../components/Navigation';
 import OfflineLangAlert from '../components/OfflineLangAlert';
+import SyncStatus from '../components/SyncStatus';
 import { ensureCurrentPatientRegistered } from '../services/patientRegistry';
 
 function PatientDashboard({ patient, setPatient }) {
@@ -54,9 +55,12 @@ function PatientDashboard({ patient, setPatient }) {
           <OfflineLangAlert lang={lang} />
           
           <div className="patient-dash-topbar">
-            <div className="patient-dash-badge">
-              <span className="patient-badge-dot"></span>
-              <span className="patient-badge-text">Patient</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="patient-dash-badge">
+                <span className="patient-badge-dot"></span>
+                <span className="patient-badge-text">Patient</span>
+              </div>
+              <SyncStatus mode="badge" patientId={activePatient.patient_id} />
             </div>
             <button className="patient-logout-btn" onClick={handleLogout} title="Log out and return to role selection">
               <LogOut size={16} />

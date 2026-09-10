@@ -3,22 +3,29 @@
 import { missingTranslation } from "../i18n.js";
 
 export const FOOD_ITEMS = [
-  { name: "Momos", image: "assets/food/momos.jpg" },
-  { name: "Thukpa", image: "assets/food/thukpa.jpg" },
-  { name: "Pitha", image: "assets/food/pitha.jpg" },
-  { name: "Khar", image: "assets/food/khar.jpg" },
-  { name: "Jadoh", image: "assets/food/jadoh.jpg" },
-  { name: "Bamboo shoot curry", image: "assets/food/bamboo-shoot-curry.jpg" },
-  { name: "Fish tenga", image: "assets/food/fish-tenga.jpg" },
+  { name: "Momos" },
+  { name: "Thukpa" },
+  { name: "Pitha" },
+  { name: "Khar" },
+  { name: "Jadoh" },
+  { name: "Bamboo Shoot" },
+  { name: "Fish Curry" },
+  { name: "Rice" },
+  { name: "Dal" },
+  { name: "Roti" },
 ];
 
 export const FRUIT_ITEMS = [
-  { name: "Assam orange", image: "assets/fruit/assam-orange.jpg" },
-  { name: "Pineapple", image: "assets/fruit/pineapple.jpg" },
-  { name: "Litchi", image: "assets/fruit/litchi.jpg" },
-  { name: "Passion fruit", image: "assets/fruit/passion-fruit.jpg" },
-  { name: "Kiwi", image: "assets/fruit/kiwi.jpg" },
-  { name: "Star fruit", image: "assets/fruit/star-fruit.jpg" },
+  { name: "Orange" },
+  { name: "Pineapple" },
+  { name: "Litchi" },
+  { name: "Passion Fruit" },
+  { name: "Kiwi" },
+  { name: "Star Fruit" },
+  { name: "Mango" },
+  { name: "Banana" },
+  { name: "Guava" },
+  { name: "Papaya" },
 ];
 
 const POOLS = { food: FOOD_ITEMS, fruit: FRUIT_ITEMS };
@@ -37,15 +44,17 @@ const EMOJI_SETS = [
 
 // Three distinct rounds per photo level: category + pair count + start offset.
 const PHOTO_ROUNDS = {
+  // Level 3: 4 pairs = 8 boxes (word-only cards)
   3: [
-    { category: "food", pairs: 4, offset: 0 },
-    { category: "fruit", pairs: 5, offset: 0 },
-    { category: "food", pairs: 5, offset: 2 },
+    { category: "food",  pairs: 4, offset: 0 },
+    { category: "fruit", pairs: 4, offset: 0 },
+    { category: "food",  pairs: 4, offset: 4 },
   ],
+  // Level 4: 8 pairs = 16 boxes (word-only cards)
   4: [
-    { category: "food", pairs: 5, offset: 0 },
-    { category: "fruit", pairs: 6, offset: 0 },
-    { category: "food", pairs: 6, offset: 1 },
+    { category: "food",  pairs: 8, offset: 0 },
+    { category: "fruit", pairs: 8, offset: 0 },
+    { category: "food",  pairs: 8, offset: 2 },
   ],
 };
 

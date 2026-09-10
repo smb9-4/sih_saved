@@ -22,6 +22,8 @@ import NurseLoginPage from './pages/NurseLoginPage';
 import AIAssistantScreen from './pages/AIAssistantScreen';
 import { ensureCurrentPatientRegistered } from './services/patientRegistry';
 import { prewarmBhashiniConfig } from './services/bhashiniTTS';
+import syncService from './services/SyncService';
+import { migrateFromLocalStorage } from './database/migrations';
 import './styles/App.css';
 
 function StartupRedirect() {
@@ -29,26 +31,23 @@ function StartupRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole');
-    const savedPatient = localStorage.getItem('patientData');
-    const savedFamily = localStorage.getItem('currentFamilyUser');
-    const savedNurse = localStorage.getItem('currentNurseUser');
+    // Only intercept root '/' — let every other route render as-is
+    if (location.pathname !== '/') return;
 
-    // Handle startup / root / role-selection redirects
-    if (location.pathname === '/' || location.pathname === '/role-selection') {
-      if (savedRole === 'patient' && savedPatient) {
-        navigate('/dashboard', { replace: true });
-      } else if (!savedRole && savedPatient && !savedFamily && !savedNurse) {
-        localStorage.setItem('userRole', 'patient');
-        navigate('/dashboard', { replace: true });
-      } else if (savedRole === 'family' && savedFamily) {
-        navigate('/family-dashboard', { replace: true });
-      } else if (savedRole === 'nurse' && savedNurse) {
-        navigate('/nurse-dashboard', { replace: true });
-      } else if (location.pathname === '/') {
-        // If on root '/' and not logged into any role, route directly to /role-selection
-        navigate('/role-selection', { replace: true });
-      }
+    const savedRole    = localStorage.getItem('userRole');
+    const savedPatient = localStorage.getItem('patientData');
+    const savedFamily  = localStorage.getItem('currentFamilyUser');
+    const savedNurse   = localStorage.getItem('currentNurseUser');
+
+    if (savedRole === 'patient' && savedPatient) {
+      navigate('/dashboard', { replace: true });
+    } else if (savedRole === 'family' && savedFamily) {
+      navigate('/family-dashboard', { replace: true });
+    } else if (savedRole === 'nurse' && savedNurse) {
+      navigate('/nurse-dashboard', { replace: true });
+    } else {
+      // Fresh install OR after logout — always show role picker
+      navigate('/role-selection', { replace: true });
     }
   }, [location.pathname, navigate]);
 
@@ -76,7 +75,15 @@ function App() {
   useEffect(() => {
     // Pre-warm Bhashini pipeline config for faster TTS
     prewarmBhashiniConfig();
-  }, []);
+
+    // Initialize offline-first SQLite database and SyncService
+    syncService.initialize().then(() => {
+      const activeId = patient?.patient_id || patient?.id || 'active_patient';
+      migrateFromLocalStorage(activeId);
+    }).catch((err) => {
+      console.warn('[App] SQLite/SyncService init error:', err);
+    });
+  }, [patient]);
 
   return (
     <Router>

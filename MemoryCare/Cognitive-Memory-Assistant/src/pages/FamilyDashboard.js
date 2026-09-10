@@ -10,6 +10,7 @@ import viewerApi, {
   selectPatient,
 } from '../services/viewerApi';
 import gameRepository from '../services/gameRepository';
+import SyncStatus from '../components/SyncStatus';
 
 const GAME_LABELS = {
   shape_sort: 'Shape Sort',
@@ -305,6 +306,10 @@ function FamilyDashboard() {
             ))}
           </select>
         </div>
+      )}
+
+      {selectedId && (
+        <SyncStatus mode="caregiver" patientId={selectedId} onSyncComplete={loadAll} />
       )}
 
       <div className="family-tabs">

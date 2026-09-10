@@ -345,12 +345,27 @@
   justify-content: center;
 }
 
-.game-page .face-stage-photo,
-.game-page .face-option-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+/* Text label replacing photo in the stage circle */
+.game-page .face-stage-name {
+  font-size: 26px;
+  font-weight: 700;
+  color: #d85a30;
+  text-align: center;
+  padding: 12px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+/* Text label replacing photo in the option buttons */
+.game-page .face-name-label {
+  font-size: 20px;
+  font-weight: 700;
+  color: #3b3b3f;
+  text-align: center;
+  padding: 8px;
+  line-height: 1.2;
   display: block;
+  overflow-wrap: anywhere;
 }
 
 .game-page .face-option-grid {
@@ -361,13 +376,15 @@
 
 .game-page .face-option-btn {
   aspect-ratio: 1 / 1;
-  padding: 0;
-  border: 4px solid #d9d3c7;
+  padding: 12px 8px;
+  border: 4px solid #d85a30;
   border-radius: 18px;
-  overflow: hidden;
   background: #faece7;
-  min-height: 140px;
+  min-height: 120px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .game-page .story-card {

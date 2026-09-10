@@ -140,9 +140,12 @@ export async function applyAdaptiveAndSave(gameType, metrics) {
     Math.min(100, Math.round(accuracy * 10) / 10)
   );
 
-  const storedLevel = clampLevel(mlResult.nextPlayLevel);
-  if (storedLevel > playedLevel && storedLevel <= MAX_LEVEL) {
-    levels[storedLevel].unlocked = true;
+  const previousCurrent = before ? clampLevel(before.currentLevel) : 1;
+  const targetNext = passed && playedLevel < MAX_LEVEL ? playedLevel + 1 : playedLevel;
+  const storedLevel = clampLevel(Math.max(previousCurrent, targetNext));
+
+  if (passed && playedLevel < MAX_LEVEL) {
+    levels[playedLevel + 1].unlocked = true;
   }
 
   write(KEY_PROGRESS, {
@@ -154,12 +157,23 @@ export async function applyAdaptiveAndSave(gameType, metrics) {
     },
   });
 
+  const nextPlayLevel = passed && playedLevel < MAX_LEVEL ? playedLevel + 1 : storedLevel;
+
+  let activePatientId = 'active_patient';
+  try {
+    const raw = localStorage.getItem('patientData');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.patient_id || parsed.id) activePatientId = parsed.patient_id || parsed.id;
+    }
+  } catch (_) {}
+
   // Persist all 15 required metrics to the local offline repository
   await gameRepository.saveGameSession({
-    patient_id: 'active_patient',
+    patient_id: activePatientId,
     game_type: gameType,
     difficulty_before: playedLevel,
-    difficulty_after: storedLevel,
+    difficulty_after: nextPlayLevel,
     accuracy: mlResult.features ? mlResult.features.accuracy : accuracy / 100.0,
     average_response_time: mlResult.features ? mlResult.features.average_response_time : (Number(metrics.avgResponseMs) || 0) / 30000.0,
     completion_rate: mlResult.features ? mlResult.features.completion_rate : (passed ? 1.0 : 0.5),

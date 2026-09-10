@@ -1,0 +1,40 @@
+{
+  "patients": {},
+  "game_sessions": {
+    "sess-uuid-1": {
+      "game_type": "pattern_matching",
+      "accuracy": 0.95,
+      "patient_id": "patient-http-1",
+      "completion_rate": 1,
+      "difficulty_before": 1,
+      "average_response_time": 2.1,
+      "difficulty_after": 2,
+      "id": "sess-uuid-1",
+      "server_version": 1,
+      "server_received_at": "2026-09-10T17:43:06.707Z"
+    }
+  },
+  "difficulty_stats": {},
+  "family_members": {},
+  "changelog": [
+    {
+      "cursor": "cur_1_1789062186707",
+      "entity_type": "game_session",
+      "entity_id": "sess-uuid-1",
+      "data": {
+        "game_type": "pattern_matching",
+        "accuracy": 0.95,
+        "patient_id": "patient-http-1",
+        "completion_rate": 1,
+        "difficulty_before": 1,
+        "average_response_time": 2.1,
+        "difficulty_after": 2,
+        "id": "sess-uuid-1",
+        "server_version": 1,
+        "server_received_at": "2026-09-10T17:43:06.707Z"
+      },
+      "timestamp": "2026-09-10T17:43:06.707Z"
+    }
+  ],
+  "cursorCounter": 1
+}

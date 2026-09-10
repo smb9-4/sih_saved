@@ -45,23 +45,19 @@ function buildDeck(level, roundIndex, lang) {
     };
   }
 
+  // Level 3 & 4: word-only pairs (no images)
   const spec = getPhotoRound(level, roundIndex);
   const items = pickPoolItems(spec.category, spec.pairs, spec.offset);
   const faces = [];
   items.forEach((item) => {
-    if (level === 3) {
-      faces.push({ pairId: item.name, kind: 'image', image: item.image, label: localizePatternItem(item, lang) });
-      faces.push({ pairId: item.name, kind: 'image', image: item.image, label: localizePatternItem(item, lang) });
-    } else {
-      faces.push({ pairId: item.name, kind: 'word', label: localizePatternItem(item, lang) });
-      faces.push({ pairId: item.name, kind: 'image', image: item.image, label: localizePatternItem(item, lang) });
-    }
+    const label = localizePatternItem(item, lang);
+    // Both cards in the pair show the word — no images
+    faces.push({ pairId: item.name, kind: 'word', label });
+    faces.push({ pairId: item.name, kind: 'word', label });
   });
   const shuffled = shuffle(faces);
-  const count = shuffled.length;
-  const columns = count === 10 ? 5 : 4;
   return {
-    columns,
+    columns: 4,
     cards: shuffled.map((face, i) => ({
       id: `card_${i}`,
       ...face,
@@ -75,7 +71,6 @@ function CardFace({ card }) {
   if (card.kind === 'shape') return <ShapeMark shape={card.shape} size={48} />;
   if (card.kind === 'emoji') return <span className="card-emoji">{card.emoji}</span>;
   if (card.kind === 'word') return <span className="card-word">{card.label}</span>;
-  if (card.kind === 'image') return <img className="card-photo" src={card.image} alt={card.label} />;
   return null;
 }
 
