@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { t, getAppLanguage } from '../i18n';
-import { levelTier } from '../services/adaptive';
-import { GAME_TYPES, getLevelState } from '../services/gameStore';
+import { getAppLanguage } from '../i18n';
+import { GAME_TYPES, getPlayLevel } from '../services/gameStore';
 import MemoryMatchGame from './games/MemoryMatchGame';
 import ShapeSortGame from './games/ShapeSortGame';
 import FaceNameGame from './games/FaceNameGame';
 import StoryGame from './games/StoryGame';
-import { GameHeader } from './games/GameParts';
 import Navigation from '../components/Navigation';
 import OfflineLangAlert from '../components/OfflineLangAlert';
 import TopBackButton from '../components/TopBackButton';
@@ -32,10 +30,7 @@ function GameScreen({ patient }) {
   const navigate = useNavigate();
   const { gameId } = useParams();
   const lang = patient?.language || getAppLanguage();
-  const [phase, setPhase] = useState('pick'); // 'pick' | 'play'
-  const [levels, setLevels] = useState(null);
-  const [picked, setPicked] = useState(1);
-  const [sessionKey, setSessionKey] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(1);
 
   const Component = GAME_COMPONENTS[gameId];
   const meta = GAME_META[gameId];
@@ -46,86 +41,36 @@ function GameScreen({ patient }) {
       return;
     }
     let cancelled = false;
-    getLevelState(gameId).then((states) => {
+    getPlayLevel(gameId).then((lvl) => {
       if (cancelled) return;
-      setLevels(states);
+      setCurrentLevel(lvl || 1);
     });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameId]);
+  }, [gameId, Component, navigate]);
 
   if (!Component || !meta) return null;
 
   const goBackToGames = () => navigate('/games');
 
-  const startLevel = (n) => {
-    setPicked(n);
-    setSessionKey((key) => key + 1);
-    setPhase('play');
-  };
-
-  if (phase === 'play') {
-    return (
-      <div className="game-page">
-        <div className="game-container">
-          <div className="top-back-row">
-            <TopBackButton to="/games" />
-          </div>
-          <OfflineLangAlert lang={lang} />
-          <div className="game-content">
-            <Component
-              key={sessionKey}
-              lang={lang}
-              level={picked}
-              onHome={() => setPhase('pick')}
-            />
-          </div>
-        </div>
-        <Navigation lang={lang} />
-      </div>
-    );
-  }
-
-  const gameLevels = levels || [];
-
   return (
     <div className="game-page">
       <div className="game-container">
+        <div className="top-back-row">
+          <TopBackButton to="/games" />
+        </div>
         <OfflineLangAlert lang={lang} />
         <div className="game-content">
-          <GameHeader lang={lang} title={t(lang, meta.nameKey)} subtitle={t(lang, meta.blurbKey)} onBack={goBackToGames} />
-          <main className="screen">
-            <p className="instruction">{t(lang, 'chooseLevel')}</p>
-            <div className="grid level-grid">
-              {gameLevels.map((state, index) => {
-                const n = index + 1;
-                const locked = !state.unlocked;
-                return (
-                  <button
-                    key={n}
-                    className={`level-btn${locked ? ' level-locked' : ''}${state.passed ? ' level-passed' : ''}`}
-                    type="button"
-                    disabled={locked}
-                    onClick={() => startLevel(n)}
-                    aria-label={`${t(lang, 'level')} ${n}`}
-                  >
-                    <span className="level-btn-mark">
-                      {locked ? '🔒' : state.passed ? '✓' : '▶'}
-                    </span>
-                    <span className="level-btn-label">
-                      {t(lang, 'level')} {n}
-                    </span>
-                    <span className="level-btn-tier">{t(lang, levelTier(n))}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </main>
+          <Component
+            key={`${gameId}-${currentLevel}`}
+            lang={lang}
+            level={currentLevel}
+            onHome={goBackToGames}
+          />
         </div>
       </div>
-      <Navigation />
+      <Navigation lang={lang} />
     </div>
   );
 }
