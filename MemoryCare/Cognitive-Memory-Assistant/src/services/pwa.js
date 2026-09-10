@@ -228,6 +228,7 @@ export async function scheduleNativeReminder(reminder) {
       sound: 'notification.mp3',
       smallIcon: 'ic_stat_memorycare',
       iconColor: '#2E7D32',
+      foreground: true,
       schedule: {
         at,
         repeats: true,
