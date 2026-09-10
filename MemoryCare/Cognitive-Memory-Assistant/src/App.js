@@ -22,11 +22,16 @@ import NurseLoginPage from './pages/NurseLoginPage';
 import AIAssistantScreen from './pages/AIAssistantScreen';
 import { ensureCurrentPatientRegistered } from './services/patientRegistry';
 import { prewarmBhashiniConfig } from './services/bhashiniTTS';
+import { initNativeNotificationListeners } from './services/pwa';
 import './styles/App.css';
 
 function StartupRedirect() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    initNativeNotificationListeners(navigate);
+  }, [navigate]);
 
   useEffect(() => {
     if (location.pathname !== '/') return;

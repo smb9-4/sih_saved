@@ -107,31 +107,57 @@ export function stopNotificationSound() {
   } catch (e) {}
 }
 
-export function requestNotificationPermission() {
-  if (isNative()) {
-    LocalNotifications.checkPermissions()
-      .then((permission) => {
-        if (permission.display !== 'granted') {
-          return LocalNotifications.requestPermissions();
-        }
-        return permission;
-      })
-      .catch(() => {});
-    return;
+export const REMINDER_CHANNEL_ID = 'reminders_channel';
+
+export async function ensureReminderChannel() {
+  if (!isNative()) return;
+  try {
+    await LocalNotifications.createChannel({
+      id: REMINDER_CHANNEL_ID,
+      name: 'Daily Reminders',
+      description: 'Sound alarms and reminders for medication, hydration, and tasks',
+      importance: 5,
+      visibility: 1,
+      sound: 'notification.mp3',
+      vibration: true,
+      lights: true,
+      lightColor: '#2E7D32',
+    });
+  } catch (e) {
+    console.warn('Could not create notification channel:', e);
   }
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
-  setTimeout(() => {
-    Notification.requestPermission().catch(() => {});
-  }, 3000);
+}
+
+export async function checkNotificationPermissions() {
+  if (isNative()) {
+    try {
+      const permission = await LocalNotifications.checkPermissions();
+      return permission.display;
+    } catch (e) {
+      return 'denied';
+    }
+  }
+  if (typeof window !== 'undefined' && 'Notification' in window) {
+    return Notification.permission;
+  }
+  return 'granted';
+}
+
+export function requestNotificationPermission() {
+  requestNotificationPermissions().catch(() => {});
 }
 
 export async function requestNotificationPermissions() {
   if (isNative()) {
     try {
-      const permission = await LocalNotifications.checkPermissions();
-      if (permission.display === 'granted') return true;
+      await ensureReminderChannel();
       const result = await LocalNotifications.requestPermissions();
+      try {
+        const exactSetting = await LocalNotifications.checkExactNotificationSetting();
+        if (exactSetting && exactSetting.exact_alarm !== 'granted') {
+          await LocalNotifications.changeExactNotificationSetting();
+        }
+      } catch (err) {}
       return result.display === 'granted';
     } catch (e) {
       return false;
@@ -154,24 +180,24 @@ async function getRegistration() {
   }
 }
 
-function nextOccurrenceTime(time, days = [0, 1, 2, 3, 4, 5, 6]) {
+export function nextOccurrenceTime(time, days = [0, 1, 2, 3, 4, 5, 6]) {
   const [hours, minutes] = String(time || '').split(':').map(Number);
   if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
   const now = new Date();
   const selectedDays = Array.isArray(days) && days.length ? days : [0, 1, 2, 3, 4, 5, 6];
   for (let offset = 0; offset <= 7; offset += 1) {
-    const target = new Date(now);
-    target.setDate(now.getDate() + offset);
-    target.setHours(hours, minutes, 0, 0);
-    if (selectedDays.includes(target.getDay()) && target.getTime() > now.getTime()) {
+    const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset, hours, minutes, 0, 0);
+    if (selectedDays.includes(target.getDay()) && target.getTime() > (now.getTime() + 3000)) {
       return target;
     }
   }
-  return null;
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, hours, minutes, 0, 0);
 }
 
 export async function scheduleNativeReminder(reminder) {
-  if (!isNative() || !reminder) return;
+  if (!isNative() || !reminder || reminder.completed) return [];
+  await ensureReminderChannel();
+
   const days = Array.isArray(reminder.days) && reminder.days.length
     ? reminder.days
     : [0, 1, 2, 3, 4, 5, 6];
@@ -179,46 +205,117 @@ export async function scheduleNativeReminder(reminder) {
   const body = reminder.description
     ? `${reminder.time} - ${reminder.description}`
     : `Reminder at ${reminder.time}`;
-  try {
-    await LocalNotifications.schedule({
-      notifications: days.map((day) => {
-        const at = nextOccurrenceTime(reminder.time, [day]);
-        return {
-          id: Number(`${String(reminder.id).slice(-7)}${day}`) || Date.now() % 2147483647,
-          title,
-          body,
-          schedule: { at, every: 'week' },
-          sound: 'notification.mp3',
-          smallIcon: 'ic_stat_memorycare',
-          iconColor: '#2E7D32',
-        };
-      }),
+
+  // Safe 32-bit integer base id under 2,000,000,000
+  const rawId = Math.abs(Number(reminder.id) || Date.now());
+  const baseId = (rawId % 100000) * 10;
+
+  const notifications = [];
+  const scheduledNotificationIds = [];
+
+  for (const day of days) {
+    const at = nextOccurrenceTime(reminder.time, [day]);
+    if (!at) continue;
+
+    const notifId = baseId + (day % 10);
+    scheduledNotificationIds.push(notifId);
+
+    notifications.push({
+      id: notifId,
+      title,
+      body,
+      channelId: REMINDER_CHANNEL_ID,
+      sound: 'notification.mp3',
+      smallIcon: 'ic_stat_memorycare',
+      iconColor: '#2E7D32',
+      schedule: {
+        at,
+        repeats: true,
+        every: 'week',
+        allowWhileIdle: true,
+      },
+      isExactNotification: true,
+      autoCancel: true,
+      extra: {
+        reminderId: reminder.id,
+        url: '/reminders',
+      },
     });
-  } catch (e) {}
+  }
+
+  if (notifications.length > 0) {
+    try {
+      await LocalNotifications.schedule({ notifications });
+    } catch (e) {
+      console.warn('Error scheduling native local notifications:', e);
+    }
+  }
+
+  return scheduledNotificationIds;
 }
 
 export async function syncRemindersToNative(reminders) {
-  if (!isNative()) return;
+  if (!isNative()) return [];
   try {
-    const pending = await LocalNotifications.getPending();
-    const pendingIds = (pending.notifications || []).map((n) => n.id);
-    if (pendingIds.length) {
-      await LocalNotifications.cancel({
-        notifications: pending.notifications || [],
-      });
+    await ensureReminderChannel();
+    await LocalNotifications.cancelAll();
+
+    const updated = [];
+    for (const reminder of (reminders || [])) {
+      if (!reminder.completed) {
+        const notificationIds = await scheduleNativeReminder(reminder);
+        updated.push({ ...reminder, notificationIds });
+      } else {
+        updated.push(reminder);
+      }
     }
-    (reminders || [])
-      .filter((r) => !r.completed)
-      .forEach((reminder) => scheduleNativeReminder(reminder));
-  } catch (e) {}
+    return updated;
+  } catch (e) {
+    console.warn('Error syncing reminders to native:', e);
+    return reminders || [];
+  }
 }
 
-export async function cancelNativeReminder(reminderId) {
+export async function cancelNativeReminder(reminderOrId) {
   if (!isNative()) return;
   try {
-    await LocalNotifications.cancel({ notifications: Array.from({ length: 7 }, (_, day) => ({
-      id: Number(`${String(reminderId).slice(-7)}${day}`),
-    })) });
+    let ids = [];
+    if (Array.isArray(reminderOrId)) {
+      ids = reminderOrId;
+    } else if (typeof reminderOrId === 'object' && reminderOrId !== null) {
+      if (Array.isArray(reminderOrId.notificationIds) && reminderOrId.notificationIds.length) {
+        ids = reminderOrId.notificationIds;
+      } else if (reminderOrId.id) {
+        const baseId = (Math.abs(Number(reminderOrId.id)) % 100000) * 10;
+        ids = Array.from({ length: 7 }, (_, d) => baseId + d);
+      }
+    } else if (reminderOrId !== undefined && reminderOrId !== null) {
+      const baseId = (Math.abs(Number(reminderOrId)) % 100000) * 10;
+      ids = Array.from({ length: 7 }, (_, d) => baseId + d);
+    }
+
+    if (ids.length > 0) {
+      await LocalNotifications.cancel({
+        notifications: ids.map((id) => ({ id: Number(id) })),
+      });
+    }
+  } catch (e) {
+    console.warn('Error cancelling native local notification:', e);
+  }
+}
+
+export function initNativeNotificationListeners(navigate) {
+  if (!isNative()) return;
+  try {
+    LocalNotifications.removeAllListeners().then(() => {
+      LocalNotifications.addListener('localNotificationActionPerformed', (notificationAction) => {
+        if (typeof navigate === 'function') {
+          navigate('/reminders');
+        } else if (typeof window !== 'undefined') {
+          window.location.href = '/reminders';
+        }
+      });
+    }).catch(() => {});
   } catch (e) {}
 }
 

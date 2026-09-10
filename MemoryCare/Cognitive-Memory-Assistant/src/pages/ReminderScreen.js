@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Check, Wifi, WifiOff } from 'lucide-react';
+import { Plus, Trash2, Check, Wifi, WifiOff, Edit2, AlertCircle } from 'lucide-react';
 import '../styles/ReminderScreen.css';
 import Navigation from '../components/Navigation';
 import TopBackButton from '../components/TopBackButton';
-import { syncRemindersToSW, cancelReminderInSW, triggerReminderNotification, getOnlineStatus, isNative, syncRemindersToNative, cancelNativeReminder, requestNotificationPermissions } from '../services/pwa';
+import {
+  syncRemindersToSW,
+  cancelReminderInSW,
+  triggerReminderNotification,
+  getOnlineStatus,
+  isNative,
+  syncRemindersToNative,
+  scheduleNativeReminder,
+  cancelNativeReminder,
+  checkNotificationPermissions,
+  requestNotificationPermissions,
+  stopNotificationSound
+} from '../services/pwa';
 
 function ReminderScreen({ patient }) {
   const [reminders, setReminders] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingReminderId, setEditingReminderId] = useState(null);
   const [notificationPopup, setNotificationPopup] = useState(null);
   const [notifiedReminders, setNotifiedReminders] = useState(new Set());
+  const [permissionStatus, setPermissionStatus] = useState('granted');
   const [formData, setFormData] = useState({
     type: 'medicine',
     name: '',
@@ -31,42 +45,41 @@ function ReminderScreen({ patient }) {
   }, []);
 
   useEffect(() => {
-    // Request native notification permission (Android) and load reminders
     const savedReminders = localStorage.getItem('reminders');
+    let parsed = [];
+    if (savedReminders) {
+      try {
+        parsed = JSON.parse(savedReminders);
+        setReminders(parsed);
+      } catch (e) {}
+    }
+
     if (isNative()) {
-      requestNotificationPermissions().then((granted) => {
-        if (granted && savedReminders) {
-          syncRemindersToNative(JSON.parse(savedReminders));
+      checkNotificationPermissions().then((status) => {
+        setPermissionStatus(status);
+        if (status === 'granted') {
+          syncRemindersToNative(parsed).then((updated) => {
+            if (updated && updated.length) {
+              saveReminders(updated);
+            }
+          });
         }
       });
-    }
-    if (savedReminders) {
-      const parsed = JSON.parse(savedReminders);
-      setReminders(parsed);
-      if (isNative()) {
-        syncRemindersToNative(parsed);
-      } else {
-        syncRemindersToSW(parsed);
-      }
+    } else if (parsed.length) {
+      syncRemindersToSW(parsed);
     }
   }, []);
 
-  useEffect(() => {
-    if (isNative()) {
-      syncRemindersToNative(reminders);
-    } else {
-      syncRemindersToSW(reminders);
-    }
-  }, [reminders]);
-
-  // Check reminders every minute
+  // Interval check as in-app visual fallback when the screen is active
   useEffect(() => {
     const checkReminders = () => {
       const now = new Date();
+      const currentDay = now.getDay();
       const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
       reminders.forEach(reminder => {
-        if (reminder.time === currentTime && !reminder.completed && !notifiedReminders.has(reminder.id)) {
+        const days = Array.isArray(reminder.days) && reminder.days.length ? reminder.days : [0, 1, 2, 3, 4, 5, 6];
+        if (days.includes(currentDay) && reminder.time === currentTime && !reminder.completed && !notifiedReminders.has(reminder.id)) {
           setNotificationPopup(reminder);
           setNotifiedReminders(prev => new Set([...prev, reminder.id]));
           triggerReminderNotification(reminder);
@@ -75,12 +88,13 @@ function ReminderScreen({ patient }) {
     };
 
     checkReminders();
-    const interval = setInterval(checkReminders, 60000); // Check every minute
+    const interval = setInterval(checkReminders, 10000); // Check every 10 seconds to avoid timer drift
 
     return () => clearInterval(interval);
   }, [reminders, notifiedReminders]);
 
   const closeNotification = () => {
+    stopNotificationSound();
     setNotificationPopup(null);
   };
 
@@ -89,7 +103,36 @@ function ReminderScreen({ patient }) {
     setReminders(newReminders);
   };
 
-  const handleAddReminder = (e) => {
+  const handleRequestPermission = async () => {
+    const granted = await requestNotificationPermissions();
+    setPermissionStatus(granted ? 'granted' : 'denied');
+    if (granted && reminders.length && isNative()) {
+      const updated = await syncRemindersToNative(reminders);
+      if (updated && updated.length) {
+        saveReminders(updated);
+      }
+    }
+  };
+
+  const handleStartEdit = (reminder) => {
+    setEditingReminderId(reminder.id);
+    setFormData({
+      type: reminder.type || 'medicine',
+      name: reminder.name || '',
+      time: reminder.time || '',
+      description: reminder.description || '',
+      days: Array.isArray(reminder.days) && reminder.days.length ? reminder.days : [1, 2, 3, 4, 5, 6, 0]
+    });
+    setShowForm(true);
+  };
+
+  const handleCancelForm = () => {
+    setEditingReminderId(null);
+    setFormData({ type: 'medicine', name: '', time: '', description: '', days: [1, 2, 3, 4, 5, 6, 0] });
+    setShowForm(false);
+  };
+
+  const handleSaveReminder = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.time) {
       alert('Please fill in all fields');
@@ -101,35 +144,88 @@ function ReminderScreen({ patient }) {
       return;
     }
 
-    const newReminder = {
-      id: Date.now(),
-      type: formData.type,
-      name: formData.name,
-      time: formData.time,
-      description: formData.description,
-      days: formData.days,
-      completed: false,
-      createdAt: new Date().toISOString()
-    };
+    if (editingReminderId) {
+      // Edit existing reminder: cancel old notifications and schedule new ones
+      const existing = reminders.find(r => r.id === editingReminderId);
+      if (existing) {
+        if (isNative()) {
+          await cancelNativeReminder(existing);
+        }
 
-    const updatedReminders = [...reminders, newReminder];
-    saveReminders(updatedReminders);
+        const updatedItem = {
+          ...existing,
+          type: formData.type,
+          name: formData.name,
+          time: formData.time,
+          description: formData.description,
+          days: formData.days,
+        };
+
+        if (isNative() && !updatedItem.completed) {
+          const notificationIds = await scheduleNativeReminder(updatedItem);
+          updatedItem.notificationIds = notificationIds;
+        }
+
+        const updatedReminders = reminders.map(r => r.id === editingReminderId ? updatedItem : r);
+        saveReminders(updatedReminders);
+        if (!isNative()) syncRemindersToSW(updatedReminders);
+      }
+    } else {
+      // Add new reminder
+      const newReminder = {
+        id: Date.now(),
+        type: formData.type,
+        name: formData.name,
+        time: formData.time,
+        description: formData.description,
+        days: formData.days,
+        completed: false,
+        notificationIds: [],
+        createdAt: new Date().toISOString()
+      };
+
+      if (isNative()) {
+        const notificationIds = await scheduleNativeReminder(newReminder);
+        newReminder.notificationIds = notificationIds;
+      }
+
+      const updatedReminders = [...reminders, newReminder];
+      saveReminders(updatedReminders);
+      if (!isNative()) syncRemindersToSW(updatedReminders);
+    }
+
     setFormData({ type: 'medicine', name: '', time: '', description: '', days: [1, 2, 3, 4, 5, 6, 0] });
+    setEditingReminderId(null);
     setShowForm(false);
   };
 
-  const handleCompleteReminder = (id) => {
-    const updatedReminders = reminders.map(r =>
-      r.id === id ? { ...r, completed: !r.completed } : r
-    );
+  const handleCompleteReminder = async (id) => {
+    const target = reminders.find(r => r.id === id);
+    if (!target) return;
+    const willComplete = !target.completed;
+    const updatedTarget = { ...target, completed: willComplete };
+
+    if (isNative()) {
+      if (willComplete) {
+        await cancelNativeReminder(target);
+        updatedTarget.notificationIds = [];
+      } else {
+        const notificationIds = await scheduleNativeReminder(updatedTarget);
+        updatedTarget.notificationIds = notificationIds;
+      }
+    }
+
+    const updatedReminders = reminders.map(r => r.id === id ? updatedTarget : r);
     saveReminders(updatedReminders);
+    if (!isNative()) syncRemindersToSW(updatedReminders);
   };
 
-  const handleDeleteReminder = (id) => {
+  const handleDeleteReminder = async (id) => {
+    const toDelete = reminders.find(r => r.id === id);
     const updatedReminders = reminders.filter(r => r.id !== id);
     saveReminders(updatedReminders);
     if (isNative()) {
-      cancelNativeReminder(id);
+      await cancelNativeReminder(toDelete || id);
     } else {
       cancelReminderInSW(id);
     }
@@ -151,6 +247,20 @@ function ReminderScreen({ patient }) {
             </div>
           </div>
 
+          {permissionStatus !== 'granted' && (
+            <div className="permission-alert-banner">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertCircle size={22} color="#D97706" />
+                <p className="permission-alert-text">
+                  Notifications are disabled. Grant permission to hear alarms when the app is closed.
+                </p>
+              </div>
+              <button className="btn-grant-permission" onClick={handleRequestPermission}>
+                Enable Notifications
+              </button>
+            </div>
+          )}
+
           <div className="reminder-stats">
             <div className="stat-box">
               <span className="stat-number">{reminders.length}</span>
@@ -167,15 +277,17 @@ function ReminderScreen({ patient }) {
           </div>
 
           {!showForm && (
-            <button className="add-reminder-btn" onClick={() => setShowForm(true)}>
+            <button className="add-reminder-btn" onClick={() => { setEditingReminderId(null); setShowForm(true); }}>
               <Plus size={32} />
               Add New Reminder
             </button>
           )}
 
           {showForm && (
-            <form className="reminder-form" onSubmit={handleAddReminder}>
-              <label className="reminder-field-label" htmlFor="reminder-type">What is this reminder for?</label>
+            <form className="reminder-form" onSubmit={handleSaveReminder}>
+              <label className="reminder-field-label" htmlFor="reminder-type">
+                {editingReminderId ? 'Edit reminder' : 'What is this reminder for?'}
+              </label>
               <select
                 id="reminder-type"
                 value={formData.type}
@@ -230,8 +342,10 @@ function ReminderScreen({ patient }) {
                 rows="3"
               />
               <div className="form-buttons">
-                <button type="submit" className="btn-submit">Save Reminder</button>
-                <button type="button" className="btn-cancel" onClick={() => setShowForm(false)}>Cancel</button>
+                <button type="submit" className="btn-submit">
+                  {editingReminderId ? 'Update Reminder' : 'Save Reminder'}
+                </button>
+                <button type="button" className="btn-cancel" onClick={handleCancelForm}>Cancel</button>
               </div>
             </form>
           )}
@@ -262,6 +376,13 @@ function ReminderScreen({ patient }) {
                       title={reminder.completed ? 'Mark as incomplete' : 'Mark as complete'}
                     >
                       <Check size={24} />
+                    </button>
+                    <button
+                      className="action-btn edit-btn"
+                      onClick={() => handleStartEdit(reminder)}
+                      title="Edit reminder"
+                    >
+                      <Edit2 size={20} />
                     </button>
                     <button
                       className="action-btn delete-btn"

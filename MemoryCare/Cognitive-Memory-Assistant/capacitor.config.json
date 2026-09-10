@@ -9,7 +9,7 @@
     "LocalNotifications": {
       "smallIcon": "ic_stat_memorycare",
       "iconColor": "#2E7D32",
-      "sound": "beep.wav"
+      "sound": "notification.mp3"
     }
   }
 }
