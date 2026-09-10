@@ -9,6 +9,7 @@ import viewerApi, {
   getSelectedPatientId,
   selectPatient,
 } from '../services/viewerApi';
+import gameRepository from '../services/gameRepository';
 
 const GAME_LABELS = {
   shape_sort: 'Shape Sort',
@@ -468,40 +469,147 @@ function OverviewTab({ overview, patient, percent, gamesPlayed }) {
 }
 
 function HistoryTab({ gameResults }) {
+  const [offlineRecords, setOfflineRecords] = useState([]);
+  const [caregiverCaps, setCaregiverCaps] = useState({
+    pattern_matching: 4,
+    shape_sort: 4,
+    face_name_recall: 4,
+    remember_my_story: 4,
+  });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const records = await gameRepository.listSessions();
+        setOfflineRecords(records.reverse());
+        const caps = await gameRepository.getAllCaregiverMaxDifficulties();
+        setCaregiverCaps(caps);
+      } catch (e) {
+        console.warn('Error loading offline history/caps', e);
+      }
+    })();
+  }, []);
+
+  const handleCapChange = async (gameType, newCap) => {
+    const val = Number(newCap);
+    await gameRepository.setCaregiverMaxDifficulty(gameType, val);
+    setCaregiverCaps((prev) => ({ ...prev, [gameType]: val }));
+  };
+
   const results = gameResults && gameResults.game_results ? gameResults.game_results : [];
+  const combined = offlineRecords.length > 0 ? offlineRecords : results.map((g) => ({
+    id: g.id,
+    game_type: g.game_id,
+    difficulty_before: g.difficulty,
+    difficulty_after: g.difficulty,
+    accuracy: g.accuracy,
+    average_response_time: g.response_time,
+    timestamp: g.played_at,
+    model_action: 'KEEP_DIFFICULTY',
+    model_confidence: 1.0,
+    decision_reason: 'Baseline completed session',
+  }));
+
   return (
-    <div className="family-panel">
-      <h3>Recent played games</h3>
-      {results.length === 0 ? (
-        <p className="family-muted">No games played yet.</p>
-      ) : (
-        <table className="family-game-table">
-          <thead>
-            <tr>
-              <th>Game</th>
-              <th>Level</th>
-              <th>Accuracy</th>
-              <th>Time</th>
-              <th>When</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((g) => (
-              <tr key={g.id}>
-                <td>{gameLabel(g.game_id)}</td>
-                <td>L{g.difficulty}</td>
-                <td>{formatAccuracy(g.accuracy)}</td>
-                <td>{formatTime(g.response_time)}</td>
-                <td>{formatDate(g.played_at)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      {gameResults && gameResults.total > results.length && (
-        <p className="family-muted">Showing latest {results.length} of {gameResults.total} games.</p>
-      )}
-    </div>
+    <>
+      <div className="family-panel" style={{ marginBottom: '20px' }}>
+        <h3>Caregiver Adaptive Settings (Max Level Ceiling)</h3>
+        <p className="family-muted" style={{ marginBottom: '14px' }}>
+          Configure maximum difficulty levels per cognitive game. The AI model will never increase a patient's game difficulty beyond the configured ceiling.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+          {[
+            { id: 'pattern_matching', label: 'Find the Match' },
+            { id: 'shape_sort', label: 'Shape Sort' },
+            { id: 'face_name_recall', label: 'Face & Name' },
+            { id: 'remember_my_story', label: 'Story Recall' },
+          ].map((game) => (
+            <div key={game.id} style={{ background: '#F8F6F2', padding: '12px 14px', borderRadius: '10px', border: '1px solid #EAD8C7' }}>
+              <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '6px', color: '#2B2B2E' }}>{game.label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#6E6A67' }}>Max Level:</span>
+                <select
+                  value={caregiverCaps[game.id] || 4}
+                  onChange={(e) => handleCapChange(game.id, e.target.value)}
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #D85A30',
+                    background: '#fff',
+                    fontWeight: 600,
+                    color: '#D85A30',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value={1}>Level 1 (Easy)</option>
+                  <option value={2}>Level 2 (Gentle)</option>
+                  <option value={3}>Level 3 (Moderate)</option>
+                  <option value={4}>Level 4 (Standard Max)</option>
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="family-panel">
+        <h3>Adaptive Gameplay History & Explainable Decisions</h3>
+        {combined.length === 0 ? (
+          <p className="family-muted">No games played yet.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="family-game-table">
+              <thead>
+                <tr>
+                  <th>Game</th>
+                  <th>Level Transition</th>
+                  <th>Accuracy</th>
+                  <th>AI Decision</th>
+                  <th>Confidence</th>
+                  <th>Explainability Reason</th>
+                  <th>When</th>
+                </tr>
+              </thead>
+              <tbody>
+                {combined.map((g) => (
+                  <tr key={g.id}>
+                    <td><strong>{gameLabel(g.game_type)}</strong></td>
+                    <td>
+                      {g.difficulty_before === g.difficulty_after ? (
+                        `Level ${g.difficulty_before || 1}`
+                      ) : (
+                        <span>
+                          Level {g.difficulty_before || 1} &rarr; <strong>Level {g.difficulty_after || 1}</strong>
+                        </span>
+                      )}
+                    </td>
+                    <td>{formatAccuracy(g.accuracy)}</td>
+                    <td>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        background: g.model_action === 'INCREASE_DIFFICULTY' ? '#E8F5E9' : g.model_action === 'DECREASE_DIFFICULTY' ? '#FFF3E0' : '#EDE7F6',
+                        color: g.model_action === 'INCREASE_DIFFICULTY' ? '#2E7D32' : g.model_action === 'DECREASE_DIFFICULTY' ? '#E65100' : '#4527A0',
+                      }}>
+                        {g.model_action || 'KEEP_DIFFICULTY'}
+                      </span>
+                    </td>
+                    <td>{g.model_confidence != null ? `${Math.round(Number(g.model_confidence) * 100)}%` : '—'}</td>
+                    <td style={{ maxWidth: '320px', fontSize: '12px', color: '#555', lineHeight: '1.35' }}>
+                      {g.decision_reason || 'Evaluated via cognitive performance policy'}
+                    </td>
+                    <td>{formatDate(g.timestamp || g.played_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

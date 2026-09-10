@@ -1,4 +1,5 @@
-import { clampLevel, MAX_LEVEL, PASS_ACCURACY } from './adaptive';
+import { clampLevel, MAX_LEVEL, PASS_ACCURACY, evaluateAdaptiveML } from './adaptive';
+import { gameRepository } from './gameRepository';
 
 export const GAME_TYPES = {
   pattern_matching: 'pattern_matching',
@@ -115,6 +116,21 @@ export async function applyAdaptiveAndSave(gameType, metrics) {
   const accuracy = Number(metrics.accuracyPercent) || 0;
   const passed = accuracy >= PASS_ACCURACY;
 
+  // Retrieve contextual session data for ML model and policy guardrails
+  const pastSessions = await gameRepository.getRecentSessions(gameType, 10);
+  const caregiverMax = await gameRepository.getCaregiverMaxDifficulty(gameType);
+  const completedCount = await gameRepository.countCompletedSessions(gameType);
+
+  // Evaluate ML prediction with safety policies
+  const mlResult = await evaluateAdaptiveML({
+    gameType,
+    metrics,
+    pastSessions,
+    caregiverMaxDifficulty: caregiverMax,
+    completedSessionsCount: completedCount,
+    isAbandoned: Boolean(metrics.abandoned),
+  });
+
   const levels = ensureLevels(before, playedLevel);
   const prev = levels[playedLevel] || { passed: false, best_accuracy: null };
   levels[playedLevel].unlocked = true;
@@ -123,13 +139,11 @@ export async function applyAdaptiveAndSave(gameType, metrics) {
     Number(prev.best_accuracy) || 0,
     Math.min(100, Math.round(accuracy * 10) / 10)
   );
-  if (passed && playedLevel < MAX_LEVEL) {
-    levels[playedLevel + 1].unlocked = true;
-  }
 
-  const previousCurrent = before ? clampLevel(before.currentLevel) : 1;
-  const targetNext = passed && playedLevel < MAX_LEVEL ? playedLevel + 1 : playedLevel;
-  const storedLevel = clampLevel(Math.max(previousCurrent, targetNext));
+  const storedLevel = clampLevel(mlResult.nextPlayLevel);
+  if (storedLevel > playedLevel && storedLevel <= MAX_LEVEL) {
+    levels[storedLevel].unlocked = true;
+  }
 
   write(KEY_PROGRESS, {
     ...progressMap,
@@ -140,6 +154,29 @@ export async function applyAdaptiveAndSave(gameType, metrics) {
     },
   });
 
+  // Persist all 15 required metrics to the local offline repository
+  await gameRepository.saveGameSession({
+    patient_id: 'active_patient',
+    game_type: gameType,
+    difficulty_before: playedLevel,
+    difficulty_after: storedLevel,
+    accuracy: mlResult.features ? mlResult.features.accuracy : accuracy / 100.0,
+    average_response_time: mlResult.features ? mlResult.features.average_response_time : (Number(metrics.avgResponseMs) || 0) / 30000.0,
+    completion_rate: mlResult.features ? mlResult.features.completion_rate : (passed ? 1.0 : 0.5),
+    wrong_answer_rate: mlResult.features ? mlResult.features.wrong_answer_rate : 0.0,
+    retry_count: mlResult.features ? mlResult.features.retry_count : (Number(metrics.retries) || 0),
+    recent_performance_trend: mlResult.features ? mlResult.features.recent_performance_trend : 0.0,
+    model_action: mlResult.action,
+    model_confidence: mlResult.confidence,
+    decision_reason: mlResult.reason,
+    patient_message: mlResult.patientMessage,
+    timestamp: new Date().toISOString(),
+    app_version: '1.0.0-adaptive',
+    sync_status: 'offline_saved',
+    extra: metrics.extra || null,
+  });
+
+  // Also maintain backward-compatible game results
   await saveGameResult({
     gameType,
     game: gameType,
@@ -151,10 +188,22 @@ export async function applyAdaptiveAndSave(gameType, metrics) {
     avg_response_ms: metrics.avgResponseMs,
     total_time_seconds: metrics.totalTimeSeconds,
     extra: metrics.extra || null,
+    model_action: mlResult.action,
+    model_confidence: mlResult.confidence,
+    decision_reason: mlResult.reason,
+    patient_message: mlResult.patientMessage,
   });
 
-  return { nextPlayLevel: storedLevel, passed };
+  return {
+    nextPlayLevel: storedLevel,
+    passed,
+    action: mlResult.action,
+    confidence: mlResult.confidence,
+    reason: mlResult.reason,
+    patientMessage: mlResult.patientMessage,
+  };
 }
+
 
 const DEMO_FAMILY = [
   { name: 'Meena', relationshipKey: 'daughter', hue: '#D85A30' },

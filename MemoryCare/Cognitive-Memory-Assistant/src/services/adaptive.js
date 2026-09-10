@@ -78,3 +78,77 @@ export function describeAdaptive(currentLevel, metrics) {
     nextLevel: nextLevel(currentLevel, metrics),
   };
 }
+
+/**
+ * High-precision offline ML adaptive difficulty evaluation.
+ * Extracts 11 normalized features, runs INT8 predictor, and applies patient safety policies.
+ */
+export async function evaluateAdaptiveML(params) {
+  const {
+    gameType,
+    metrics,
+    pastSessions = [],
+    caregiverMaxDifficulty,
+    completedSessionsCount = 0,
+    isAbandoned = false,
+  } = params;
+
+  try {
+    const { extractGameFeatures } = await import('./gameMetrics');
+    const { difficultyPredictor } = await import('./difficultyPredictor');
+    const { evaluateDifficultyPolicy } = await import('./difficultyPolicy');
+
+    // 1. Extract 11 normalized features
+    const normalizedFeatures = extractGameFeatures(
+      {
+        gameType,
+        level: metrics.level,
+        attempts: metrics.attempts,
+        mistakes: metrics.mistakes,
+        accuracyPercent: metrics.accuracyPercent,
+        avgResponseMs: metrics.avgResponseMs,
+        totalTimeSeconds: metrics.totalTimeSeconds,
+        abandoned: isAbandoned,
+        retries: metrics.retries || 0,
+        extra: metrics.extra,
+      },
+      pastSessions,
+      MAX_LEVEL
+    );
+
+    // 2. Predict with INT8 MLP
+    const prediction = difficultyPredictor.predict(normalizedFeatures);
+
+    // 3. Apply safety policies
+    const policyResult = evaluateDifficultyPolicy({
+      currentLevel: metrics.level,
+      modelAction: prediction.action,
+      modelConfidence: prediction.confidence,
+      completedSessionsCount,
+      pastSessions,
+      caregiverMaxDifficulty,
+      isAbandoned,
+    });
+
+    return {
+      nextPlayLevel: clampLevel(policyResult.recommendedDifficulty),
+      action: policyResult.action,
+      confidence: policyResult.appliedConfidence,
+      reason: policyResult.reason,
+      patientMessage: policyResult.patientMessage,
+      features: normalizedFeatures,
+    };
+  } catch (err) {
+    console.warn('evaluateAdaptiveML: ML evaluation fallback to rule-based engine', err);
+    const ruleLevel = nextLevel(metrics.level, metrics);
+    return {
+      nextPlayLevel: clampLevel(ruleLevel),
+      action: ruleLevel > metrics.level ? 'INCREASE_DIFFICULTY' : ruleLevel < metrics.level ? 'DECREASE_DIFFICULTY' : 'KEEP_DIFFICULTY',
+      confidence: 1.0,
+      reason: 'Rule-based heuristic evaluation',
+      patientMessage: ruleLevel > metrics.level ? 'Ready for the next level?' : ruleLevel < metrics.level ? "Let's try an easier level." : "We'll keep this level.",
+      features: null,
+    };
+  }
+}
+

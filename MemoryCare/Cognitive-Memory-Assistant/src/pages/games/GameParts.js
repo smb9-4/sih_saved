@@ -68,6 +68,21 @@ export function GameSummaryView({ lang, summary, onRestart, onHome, onNext }) {
     <div className="summary screen">
       <div className={`star${passed ? ' star-passed' : ' star-missed'}`}>{passed ? '⭐' : '🔁'}</div>
       <h2>{headline}</h2>
+      {summary.patientMessage ? (
+        <div style={{
+          background: 'rgba(216, 90, 48, 0.08)',
+          border: '1.5px solid rgba(216, 90, 48, 0.3)',
+          borderRadius: '12px',
+          padding: '10px 16px',
+          margin: '12px 0 16px 0',
+          color: '#D85A30',
+          fontWeight: '600',
+          fontSize: '1.05rem',
+          textAlign: 'center',
+        }}>
+          {summary.patientMessage}
+        </div>
+      ) : null}
       <SummaryRow label={t(lang, 'level')} value={levelSubtitle(lang, summary.level)} />
       <SummaryRow label={t(lang, 'accuracy')} value={`${summary.accuracyPercent}%`} />
       <SummaryRow label={t(lang, 'timeTaken')} value={`${summary.totalTimeSeconds}s`} />
