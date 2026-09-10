@@ -1,4 +1,4 @@
-export const LANGUAGES = ['en', 'hi', 'bn', 'as', 'mni', 'brx', 'kha', 'grt', 'lus'];
+export const LANGUAGES = ['en', 'hi', 'bn', 'as', 'mni', 'brx'];
 
 export const STRINGS = {
   en: {
@@ -630,9 +630,6 @@ export function detectLanguage() {
 
 export const LANGUAGE_LABELS = {
   brx: 'बड़ो',
-  kha: 'Khasi',
-  grt: 'A·chik',
-  lus: 'Mizo',
   en: 'English',
   hi: 'हिन्दी',
   as: 'অসমীয়া',

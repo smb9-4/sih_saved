@@ -81,9 +81,6 @@ function StoryGame({ lang, level, onHome }) {
       : state.lang === 'as' ? 'বিকল্প'
       : state.lang === 'mni' ? 'অপশন'
       : state.lang === 'brx' ? 'थाखाय'
-      : state.lang === 'kha' ? 'Kyntien'
-      : state.lang === 'grt' ? 'Bikolpo'
-      : state.lang === 'lus' ? 'Thlan tur'
       : 'Option';
     return [
       question.question,

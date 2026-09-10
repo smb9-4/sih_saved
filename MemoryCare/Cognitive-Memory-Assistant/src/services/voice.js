@@ -15,9 +15,6 @@ const LANG_MAP = {
   bn: "bn-IN",
   mni: "mni-IN",
   brx: "brx-IN",
-  kha: "kha-IN",
-  grt: "grt-IN",
-  lus: "lus-IN",
 };
 
 const REMOTE_LOCALES = {
@@ -27,9 +24,6 @@ const REMOTE_LOCALES = {
   as: "as",
   mni: "mni",
   brx: "brx",
-  kha: "kha",
-  grt: "grt",
-  lus: "lus",
 };
 
 let currentLang = "en";

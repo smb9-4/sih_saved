@@ -9,9 +9,6 @@ import { registerPatient } from '../services/patientRegistry';
 
 const LANGUAGE_OPTIONS = [
   { code: 'brx', label: 'Bodo' },
-  { code: 'kha', label: 'Khasi' },
-  { code: 'grt', label: 'Garo' },
-  { code: 'lus', label: 'Mizo' },
   { code: 'en', label: 'English' },
   { code: 'hi', label: 'Hindi' },
   { code: 'as', label: 'Assamese' },

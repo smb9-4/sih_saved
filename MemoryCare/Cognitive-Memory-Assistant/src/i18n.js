@@ -1,15 +1,12 @@
 import { STRINGS as LEGACY_STRINGS } from './i18nLegacy';
 import { STRINGS as REACT_STRINGS } from './i18nReact';
 
-export const LANGUAGES = ['brx', 'kha', 'grt', 'lus', 'en', 'hi', 'as', 'bn', 'mni'];
+export const LANGUAGES = ['brx', 'en', 'hi', 'as', 'bn', 'mni'];
 
 export const SUPPORTED_LANGUAGES = LANGUAGES;
 
 export const LANGUAGE_DISPLAY_ORDER = [
   'brx',
-  'kha',
-  'grt',
-  'lus',
   'en',
   'hi',
   'as',
@@ -19,9 +16,6 @@ export const LANGUAGE_DISPLAY_ORDER = [
 
 export const LANGUAGE_LABELS = {
   brx: 'बड़ो',
-  kha: 'Khasi',
-  grt: 'A·chik',
-  lus: 'Mizo',
   en: 'English',
   hi: 'हिन्दी',
   as: 'অসমীয়া',

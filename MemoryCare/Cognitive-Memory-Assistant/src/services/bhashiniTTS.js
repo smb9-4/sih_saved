@@ -53,9 +53,6 @@ const BHASHINI_LANGS = {
   as: "as",    // Assamese
   mni: "mni",  // Manipuri (Meitei)
   brx: "brx",  // Bodo
-  kha: "kha",  // Khasi
-  grt: "grt",  // Garo
-  lus: "lus",  // Mizo
 };
 
 // Female Indic TTS models. Indo-Aryan (hi/bn/as) and misc (mni/brx)
@@ -67,9 +64,6 @@ const TTS_SERVICE_IDS = {
   as: "ai4bharat/indic-tts-coqui-indo_aryan-gpu--t4",
   mni: "ai4bharat/indic-tts-coqui-misc-gpu--t4",
   brx: "ai4bharat/indic-tts-coqui-misc-gpu--t4",
-  kha: "Bhashini/IITM/TTS",
-  grt: "Bhashini/IITM/TTS",
-  lus: "Bhashini/IITM/TTS",
 };
 
 const TTS_SCRIPT_CODES = {
